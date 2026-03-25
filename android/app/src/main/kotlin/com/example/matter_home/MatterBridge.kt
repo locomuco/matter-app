@@ -270,6 +270,13 @@ class MatterBridge(private val context: Context) {
             main.post { result.success(true) }
         }
 
+    fun readHumidity(nodeId: Long, result: MethodChannel.Result) =
+        requireChip(result) {
+            val centi = ClusterClient.readHumidity(context, nodeId)
+            // null → send as -1 so MethodChannel (which can't carry Dart null for Int) is unambiguous
+            main.post { result.success(centi) }
+        }
+
     // ── Cluster Inspector — wildcard read ────────────────────────────────────
 
     fun readClusters(nodeId: Long, result: MethodChannel.Result) =

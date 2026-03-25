@@ -240,6 +240,7 @@ class _ThermostatCardState extends State<_ThermostatCard> {
   int? _pendingMode;
   String? _serialNumber;
   String? _softwareVersion;
+  int? _humidityCenti; // 0.01 % RH units, null = cluster absent
 
   @override
   void initState() {
@@ -253,13 +254,16 @@ class _ThermostatCardState extends State<_ThermostatCard> {
     final results = await Future.wait([
       channel.readThermostat(widget.device.nodeId),
       channel.readBasicInfo(widget.device.nodeId),
+      channel.readHumidity(widget.device.nodeId),
     ]);
     final s    = results[0] as ThermostatState?;
     final info = results[1] as ({String serialNumber, String softwareVersion})?;
+    final hum  = results[2] as int?;
     if (mounted) setState(() {
       _state           = s;
       _serialNumber    = info?.serialNumber.isNotEmpty == true    ? info!.serialNumber    : null;
       _softwareVersion = info?.softwareVersion.isNotEmpty == true ? info!.softwareVersion : null;
+      _humidityCenti   = hum;
       _loading         = false;
     });
   }
@@ -317,6 +321,12 @@ class _ThermostatCardState extends State<_ThermostatCard> {
                 current:  _pendingMode ?? _state!.systemMode,
                 onSelect: _setMode,
               ),
+
+            // ── Humidity ──────────────────────────────────────────────
+            if (_humidityCenti != null) ...[
+              const SizedBox(height: 14),
+              _HumidityRow(humidityCenti: _humidityCenti!),
+            ],
 
             // ── Device info ───────────────────────────────────────────
             if (_serialNumber != null || _softwareVersion != null) ...[
@@ -628,6 +638,43 @@ class _InfoLine extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Humidity row
+// ---------------------------------------------------------------------------
+
+class _HumidityRow extends StatelessWidget {
+  /// Raw value in 0.01 % RH units (e.g. 5723 = 57.23 %).
+  final int humidityCenti;
+  const _HumidityRow({required this.humidityCenti});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs  = Theme.of(context).colorScheme;
+    final pct = humidityCenti / 100.0;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.water_drop_outlined, size: 18,
+            color: Colors.lightBlue[300]),
+        const SizedBox(width: 6),
+        Text(
+          '${pct.toStringAsFixed(0)} %',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          'humidity',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

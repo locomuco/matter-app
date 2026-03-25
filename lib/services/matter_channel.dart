@@ -376,6 +376,19 @@ class MatterChannel {
     }
   }
 
+  /// Reads MeasuredValue from the Relative Humidity Measurement cluster (0x0405).
+  /// Returns humidity in units of 0.01 % RH (e.g. 5723 → 57.23 %), or null
+  /// when the cluster is absent or the device reports a null sentinel.
+  Future<int?> readHumidity(int nodeId) async {
+    try {
+      final raw = await _method.invokeMethod<int>('readHumidity', {'nodeId': nodeId});
+      return raw; // null means cluster not present / attribute null
+    } on PlatformException catch (e) {
+      debugPrint('readHumidity error: ${e.message}');
+      return null;
+    }
+  }
+
   /// Opens the Android Thread credential picker (system consent UI).
   /// Returns the selected hex dataset string, or empty string if cancelled.
   Future<String?> readAndroidThreadCredentials() async {

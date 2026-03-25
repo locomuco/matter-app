@@ -103,6 +103,11 @@ class MainActivity : FlutterActivity() {
                         bridge.writeSystemMode(nodeId, mode, result)
                     }
 
+                    "readHumidity" -> {
+                        val nodeId = call.argument<Int>("nodeId")?.toLong() ?: 0L
+                        bridge.readHumidity(nodeId, result)
+                    }
+
                     "readClusters" -> {
                         val nodeId = call.argument<Int>("nodeId")?.toLong() ?: 0L
                         bridge.readClusters(nodeId, result)

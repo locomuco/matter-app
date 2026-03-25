@@ -39,10 +39,11 @@ object ClusterIDMapping {
         const val ID: Long = 0x00000028L
 
         object Attribute {
-            object VendorID    { const val id: Long = 0x00000002L }
-            object ProductID   { const val id: Long = 0x00000004L }
-            object NodeLabel   { const val id: Long = 0x00000005L }
+            object VendorID              { const val id: Long = 0x00000002L }
+            object ProductID             { const val id: Long = 0x00000004L }
+            object NodeLabel             { const val id: Long = 0x00000005L }
             object SoftwareVersionString { const val id: Long = 0x0000000AL }
+            object SerialNumber          { const val id: Long = 0x0000000EL }
         }
     }
 
@@ -51,6 +52,32 @@ object ClusterIDMapping {
 
         object Attribute {
             object DeviceTypeList { const val id: Long = 0x00000000L }
+        }
+    }
+
+    object Thermostat {
+        const val ID: Long = 0x00000201L
+
+        object Attribute {
+            object LocalTemperature            { const val id: Long = 0x00000000L }
+            object OccupiedHeatingSetpoint     { const val id: Long = 0x00000012L }
+            object OccupiedCoolingSetpoint     { const val id: Long = 0x00000011L }
+            object SystemMode                  { const val id: Long = 0x0000001CL }
+            object ControlSequenceOfOperation  { const val id: Long = 0x0000001BL }
+        }
+
+        object Command {
+            object SetpointRaiseLower { const val id: Long = 0x00000000L }
+        }
+    }
+
+    object RelativeHumidityMeasurement {
+        const val ID: Long = 0x00000405L
+
+        object Attribute {
+            object MeasuredValue    { const val id: Long = 0x00000000L }
+            object MinMeasuredValue { const val id: Long = 0x00000001L }
+            object MaxMeasuredValue { const val id: Long = 0x00000002L }
         }
     }
 }

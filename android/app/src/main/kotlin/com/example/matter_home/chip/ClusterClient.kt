@@ -6,6 +6,7 @@ import chip.devicecontroller.ClusterIDMapping.BasicInformation
 import chip.devicecontroller.ClusterIDMapping.Descriptor
 import chip.devicecontroller.ClusterIDMapping.LevelControl
 import chip.devicecontroller.ClusterIDMapping.OnOff
+import chip.devicecontroller.ClusterIDMapping.RelativeHumidityMeasurement
 import chip.devicecontroller.ClusterIDMapping.Thermostat
 import chip.devicecontroller.InvokeCallback
 import chip.devicecontroller.ReportCallback
@@ -453,6 +454,61 @@ object ClusterClient {
             )
         }
         Log.d(TAG, "writeSystemMode mode=$mode → nodeId=$nodeId ep=$endpoint")
+    }
+
+    // ── Relative Humidity Measurement cluster ─────────────────────────────────
+
+    /**
+     * Reads MeasuredValue (0x0000) from the Relative Humidity Measurement
+     * cluster (0x0405) on [endpoint].
+     *
+     * The value is in units of 0.01 % RH (e.g. 5723 = 57.23 %).
+     * Returns null when the attribute is not present or reports the null
+     * sentinel (0xFFFF per Matter spec §2.6.5).
+     */
+    suspend fun readHumidity(
+        context: Context,
+        nodeId: Long,
+        endpoint: Int = ENDPOINT_1,
+    ): Int? {
+        val ptr  = ChipClient.getConnectedDevicePointer(context, nodeId)
+        val path = ChipAttributePath.newInstance(
+            endpoint,
+            RelativeHumidityMeasurement.ID,
+            RelativeHumidityMeasurement.Attribute.MeasuredValue.id,
+        )
+        return suspendCancellableCoroutine { cont ->
+            ChipClient.getController().readPath(
+                object : ReportCallback {
+                    override fun onError(
+                        attributePath: chip.devicecontroller.model.ChipAttributePath?,
+                        eventPath: chip.devicecontroller.model.ChipEventPath?,
+                        ex: Exception,
+                    ) {
+                        Log.w(TAG, "readHumidity not available: ${ex.message}")
+                        if (cont.isActive) cont.resume(null)
+                    }
+
+                    override fun onReport(state: NodeState?) {
+                        val raw = state
+                            ?.getEndpointState(endpoint)
+                            ?.getClusterState(RelativeHumidityMeasurement.ID)
+                            ?.getAttributeState(RelativeHumidityMeasurement.Attribute.MeasuredValue.id)
+                            ?.getValue()
+                            ?.let { (it as? Number)?.toInt() }
+                        // 0xFFFF is the Matter null sentinel for this attribute
+                        val value = if (raw == null || raw == 0xFFFF) null else raw
+                        Log.d(TAG, "readHumidity → ${value?.let { "${it / 100.0}%" } ?: "null"}")
+                        if (cont.isActive) cont.resume(value)
+                    }
+                },
+                ptr,
+                listOf(path),
+                null,
+                false,
+                0,
+            )
+        }
     }
 
     // ── Wildcard cluster/attribute read (for Cluster Inspector) ──────────────
